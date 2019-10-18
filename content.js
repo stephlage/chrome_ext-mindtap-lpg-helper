@@ -39,119 +39,196 @@ function gotMessage(request, sender, sendResponse) {
     eventFire(expandCollapseButton, "click"); //expands all of it.
     ////////learning path is now fully expanded.  Begin scraping the LPG//////////
 
-    //   level 1 contains:
-    //   activities:	class="activity-name"
-    //   folders:	class="topic-name-level-1"
-    //   units:		class="topic-name-level-1"
+    ///learningPath is the FULL learning path
+    var learningPath = document
+      .getElementById("outlineViewTab")
+      .querySelectorAll(
+        "li.activities-wrapper,li.topic-level-1,li.topic-level-2,li.topic-level-3,li.topic-level-4,li.topic-level-5,li.topic-level-6"
+      );
 
-    // level 2 contains:
-    //   activities:	class="activity-name"
-    //   folders:	class="topic-name-level-2"
-    //   units:		class="topic-name-level-2"
+    //Make new arrays
+    var lpgArrayTitle = [];
+    //var lpgArrayCaption = [];
+    var lpgArrayType = [];
+    var lpgArrayItemType = [];
 
-    // etc...
+    //walk down the learning path...
+    for (var i = 0; i < learningPath.length; i++) {
+      lpgArrayTitle[i] = learningPath[i].innerText.split("\n")[0]; //title
+      // lpgArrayCaption[i] = learningPath[i].innerText.split("\n")[1]; //caption -- not always perfect.. so ignore this functionality for now
 
-    // how to tell level 2 stuff inside of level 1 stuff...?
+      lpgArrayType[i] = learningPath[i].className; //class type (topic-level-# or activities-wrapper)
 
-    // topic-level-2
+      //check what it is, based on the icon
 
-    // document.getElementsByClassName("topic-level-1")[6].getElementsByClassName("topic-level-2")[0].getElementsByClassName("topic-name-level-2")[0].innerText
+      if (learningPath[i].innerHTML.includes("icon-folder")) {
+        lpgArrayItemType[i] = "Folder";
+      } else if (learningPath[i].innerHTML.includes("unit-icon")) {
+        lpgArrayItemType[i] = "Unit";
+      } else if (learningPath[i].innerHTML.includes("icon-reading2")) {
+        lpgArrayItemType[i] = "Reading";
+      } else if (learningPath[i].innerHTML.includes("icon-images")) {
+        lpgArrayItemType[i] = "Media";
+      } else if (learningPath[i].innerHTML.includes("icon-flashcards")) {
+        lpgArrayItemType[i] = "Flashcards";
+      } else if (learningPath[i].innerHTML.includes("icon-feed5")) {
+        lpgArrayItemType[i] = "RSS";
+      } else if (learningPath[i].innerHTML.includes("icon-link")) {
+        lpgArrayItemType[i] = "Link";
+      } else if (learningPath[i].innerHTML.includes("icon-file-o")) {
+        lpgArrayItemType[i] = "File";
+      } else if (learningPath[i].innerHTML.includes("icon-assign")) {
+        if (
+          learningPath[i].parentElement.previousElementSibling &&
+          learningPath[
+            i
+          ].parentElement.previousElementSibling.className.includes(
+            "activity--has-child"
+          )
+        ) {
+          lpgArrayItemType[i] = "Inline Assignment";
+        } else {
+          lpgArrayItemType[i] = "Assignment";
+        }
+      } else {
+        lpgArrayItemType[i] = "Unknown";
+      }
+    }
+    //populate title into the correct column?
+    var columnNumber = 0;
+    var lpgPlacement = [];
 
-    // document.getElementsByClassName("topic-level-1")[0].getElementsByClassName("activity-name").length
+    for (var i = 0; i < learningPath.length; i++) {
+      if (
+        learningPath[i].className.includes("topic-level-1") ||
+        (learningPath[i].previousElementSibling &&
+          learningPath[i].previousElementSibling.className.includes(
+            "topic-level-1"
+          ))
+      ) {
+        columnNumber = 1;
+      } else if (
+        learningPath[i].className.includes("topic-level-2") ||
+        (learningPath[i].previousElementSibling &&
+          learningPath[i].previousElementSibling.className.includes(
+            "topic-level-2"
+          ))
+      ) {
+        columnNumber = 2;
+      } else if (
+        learningPath[i].className.includes("topic-level-3") ||
+        (learningPath[i].previousElementSibling &&
+          learningPath[i].previousElementSibling.className.includes(
+            "topic-level-3"
+          ))
+      ) {
+        columnNumber = 3;
+      } else if (
+        learningPath[i].className.includes("topic-level-4") ||
+        (learningPath[i].previousElementSibling &&
+          learningPath[i].previousElementSibling.className.includes(
+            "topic-level-4"
+          ))
+      ) {
+        columnNumber = 4;
+      } else if (
+        learningPath[i].className.includes("topic-level-5") ||
+        (learningPath[i].previousElementSibling &&
+          learningPath[i].previousElementSibling.className.includes(
+            "topic-level-5"
+          ))
+      ) {
+        columnNumber = 5;
+      } else if (
+        learningPath[i].className.includes("topic-level-6") ||
+        (learningPath[i].previousElementSibling &&
+          learningPath[i].previousElementSibling.className.includes(
+            "topic-level-6"
+          ))
+      ) {
+        columnNumber = 6;
+      } else if (
+        learningPath[i].className.includes("topic-level-7") ||
+        (learningPath[i].previousElementSibling &&
+          learningPath[i].previousElementSibling.className.includes(
+            "topic-level-7"
+          ))
+      ) {
+        columnNumber = 7;
+      } else if (
+        learningPath[i].previousElementSibling &&
+        !learningPath[i].previousElementSibling.className.includes(
+          "activities-wrapper"
+        )
+      ) {
+        columnNumber = columnNumber + 1;
+      } else if (
+        learningPath[i].previousElementSibling &&
+        learningPath[i].previousElementSibling.className.includes(
+          "activities-wrapper"
+        ) &&
+        learningPath[i].innerHTML.includes("activity--has-child") &&
+        learningPath[i].previousElementSibling.innerHTML.includes(
+          "activity--has-child"
+        )
+      ) {
+        columnNumber = columnNumber - 1;
+      } else if (
+        !learningPath[i].previousElementSibling &&
+        learningPath[i].className.includes("activities-wrapper") &&
+        learningPath[i].parentElement.className.includes("inline-activities")
+      ) {
+        columnNumber = columnNumber + 1;
+      } else if (!learningPath[i].previousElementSibling) {
+        columnNumber = columnNumber + 1;
+      }
 
-    // -----------------
+      lpgPlacement[i] = columnNumber;
+    }
 
-    // Array of all
-    // class="activity-name"
+    console.log(lpgPlacement);
+    console.log(lpgArrayTitle);
+    console.log(lpgArrayType);
+    console.log(lpgArrayItemType);
 
-    // This is all of the activities...readings..everything that can be clicked on and interacted with..
+    var combinedArray = [];
+    combinedArray.push(lpgPlacement);
+    combinedArray.push(lpgArrayTitle);
+    //combinedArray.push(lpgArrayType); we no longer need this.  it would only show topic-level-# OR activities-wrapper.  The next line is better.
+    combinedArray.push(lpgArrayItemType);
 
-    // Then we can place them according to a for loop?
+    /////////If you've got an array that goes one way, but you want it the other way.... this will transpose it.
+    function transposeArray(array) {
+      var newArray = [];
+      for (var i = 0; i < array[0].length; i++) {
+        newArray.push([]);
+      }
+      for (var i = 0; i < array.length; i++) {
+        for (var j = 0; j < array[0].length; j++) {
+          newArray[j].push(array[i][j]);
+        }
+      }
+      return newArray;
+    }
 
-    // we can check placement if we do something like this?
-    // document.getElementsByClassName("topic-level-1")[0].getElementsByClassName("activity-name")[0]===document.getElementsByClassName("activity-name")[1]
-    // -shows TRUE
+    var finalLPG = [];
+    finalLPG = transposeArray(combinedArray);
 
-    // -------
-    // starting over... train of thought
+    console.log(finalLPG);
 
-    // ::::::GET LENGTHS until lengths is zero::::::::
+    // So what we will do is run through the length of finalLPG
+    for (var i = 0; i < finalLPG.length; i++) {
+      var title = finalLPG[i][0];
+      var position = finalLPG[i][1];
+      var type = finalLPG[i][2];
 
-    // document.getElementsByClassName("activity-name").length
-    // 134
-    // document.getElementsByClassName("topic-name-level-1").length
-    // 13
-    // document.getElementsByClassName("topic-name-level-2").length
-    // 22
-    // document.getElementsByClassName("topic-name-level-3").length
-    // 0
+      // And at each line - check the first [0]  that is which column we put shit into
+      // From there, we take the TITLE [1] and put spaces ahead/behind accordingly for 6 columns.
 
-    // Then walk backwards to start formulating placement of the activities.
-
-    // document.getElementsByClassName("topic-level-1")[1].getElementsByClassName("topic-level-2")[0].getElementsByClassName("activity-name")[0].innerText
-    // ...
-    // ugh
-    // this isn't going to work out either...with things being all weird and kinda nested in places.
-
-    // ----------------------------------
-
-    // document.querySelectorAll(".activity-name")
-
-    // OKAY I THINK I GOT IT
-
-    // If the activity-name is on the main plank location, it will get <ul role="tabpanel" as the parent node after this many iterations:
-
-    // document.querySelectorAll(".activity-name")[0].parentNode.parentNode.parentNode.parentNode.parentNode.parentNode
-
-    // MAIN LEVEL: SIX
-
-    // If it's nested in the first folder/unit then it has this many:
-    // document.querySelectorAll(".activity-name")[1].parentNode.parentNode.parentNode.parentNode.parentNode.parentNode.parentNode.parentNode.parentNode.parentNode.parentNode.parentNode
-
-    // FIRST FOLDER NEST: TWELVE
-
-    // If it's nested within the next level...
-
-    // document.querySelectorAll(".activity-name")[8].parentNode.parentNode.parentNode.parentNode.parentNode.parentNode.parentNode.parentNode.parentNode.parentNode.parentNode.parentNode.parentNode.parentNode.parentNode
-
-    // SECOND FOLDER NEST: FIFTEEN
-
-    // ................
-
-    // SO now we have all of the activities labeled with which level they are at.
-
-    // ................
-    // So then we can just get the
-    // class="topic-name-level-1"
-    // class="topic-name-level-2"
-    // ...etc
-
-    // and place then between each hirearchy jump between Activities?
-
-    // Maybe?
-    // idk if this would work... no idea.......
-
-    // There might be a methodical way to count out the hirearchy jumpers and literally get the array location for
-
-    // document.getElementsByClassName("topic-name-level-1")[12].getElementsByClassName("topic-name__text")[0].innerText
-
-    // document.getElementsByClassName("topic-name-level-1")[12].getElementsByClassName("topic-name-level-1")[0].innerText
-
-    // this is the div that holds stuff.
-    // topic-level-1
-    // topic-level-2
-    // topic-level-3
-
-    // this is the div that holds the name of the item specifically
-    // topic-name-level-1
-    // topic-name-level-2
-    // topic-name-level-3
-
-    // and I'm not sure if it is level 1 specific... or if it's specific to ALL units.. But to get the name of the unit without the "XX activities" text, you need to use:
-    // topic-name__text
-
-    // like:
-    // document.getElementsByClassName("topic-level-1")[11].getElementsByClassName("topic-name-level-1")[0].getElementsByClassName("topic-name__text")[0].innerText
+      ////PUT THEM INTO THE CORRECT COLUMNS
+      finalLPG[1].splice(1, 0, "baz");
+      //[2, "baz", "Video", "Media"]
+    }
 
     chrome.runtime.sendMessage({ message: "scrapestart" });
   } else if (request.message === "scrapedone") {
