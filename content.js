@@ -61,22 +61,32 @@ function gotMessage(request, sender, sendResponse) {
 
       //check what it is, based on the icon
 
-      if (learningPath[i].innerHTML.includes("icon-folder")) {
-        lpgArrayItemType[i] = "Folder";
-      } else if (learningPath[i].innerHTML.includes("unit-icon")) {
-        lpgArrayItemType[i] = "Unit";
+      ///the innerhtml is having troubles differentiating if unit or folder comes first.
+
+      ///if learningPath[1427].className.includes("topic-level-")
+
+      if (
+        learningPath[i].firstChild &&
+        learningPath[i].firstChild.innerHTML.includes("icon-folder")
+      ) {
+        lpgArrayItemType[i] = "folder";
+      } else if (
+        learningPath[i].firstChild &&
+        learningPath[i].firstChild.innerHTML.includes("unit-icon")
+      ) {
+        lpgArrayItemType[i] = "unit";
       } else if (learningPath[i].innerHTML.includes("icon-reading2")) {
-        lpgArrayItemType[i] = "Reading";
+        lpgArrayItemType[i] = "reading";
       } else if (learningPath[i].innerHTML.includes("icon-images")) {
-        lpgArrayItemType[i] = "Media";
+        lpgArrayItemType[i] = "media";
       } else if (learningPath[i].innerHTML.includes("icon-flashcards")) {
-        lpgArrayItemType[i] = "Flashcards";
+        lpgArrayItemType[i] = "flashcards";
       } else if (learningPath[i].innerHTML.includes("icon-feed5")) {
-        lpgArrayItemType[i] = "RSS";
+        lpgArrayItemType[i] = "rss";
       } else if (learningPath[i].innerHTML.includes("icon-link")) {
-        lpgArrayItemType[i] = "Link";
+        lpgArrayItemType[i] = "link";
       } else if (learningPath[i].innerHTML.includes("icon-file-o")) {
-        lpgArrayItemType[i] = "File";
+        lpgArrayItemType[i] = "file";
       } else if (learningPath[i].innerHTML.includes("icon-assign")) {
         if (
           learningPath[i].parentElement.previousElementSibling &&
@@ -86,12 +96,12 @@ function gotMessage(request, sender, sendResponse) {
             "activity--has-child"
           )
         ) {
-          lpgArrayItemType[i] = "Inline Assignment";
+          lpgArrayItemType[i] = "inline_assignment";
         } else {
-          lpgArrayItemType[i] = "Assignment";
+          lpgArrayItemType[i] = "assignment";
         }
       } else {
-        lpgArrayItemType[i] = "Unknown";
+        lpgArrayItemType[i] = "unknown";
       }
     }
     //populate title into the correct column?
@@ -192,6 +202,7 @@ function gotMessage(request, sender, sendResponse) {
     console.log(lpgArrayItemType);
 
     var combinedArray = [];
+
     combinedArray.push(lpgPlacement);
     combinedArray.push(lpgArrayTitle);
     //combinedArray.push(lpgArrayType); we no longer need this.  it would only show topic-level-# OR activities-wrapper.  The next line is better.
@@ -211,24 +222,129 @@ function gotMessage(request, sender, sendResponse) {
       return newArray;
     }
 
+    console.log(combinedArray);
+
     var finalLPG = [];
     finalLPG = transposeArray(combinedArray);
 
     console.log(finalLPG);
 
     // So what we will do is run through the length of finalLPG
+    //and make a new array with the columns n stuff at the right places
+    //var exportLPG = [];
+
     for (var i = 0; i < finalLPG.length; i++) {
-      var title = finalLPG[i][0];
-      var position = finalLPG[i][1];
-      var type = finalLPG[i][2];
+      // var position = finalLPG[i][0];
+      // var title = finalLPG[i][1];
+      //var type = finalLPG[i][2];
 
-      // And at each line - check the first [0]  that is which column we put shit into
-      // From there, we take the TITLE [1] and put spaces ahead/behind accordingly for 6 columns.
-
-      ////PUT THEM INTO THE CORRECT COLUMNS
-      finalLPG[1].splice(1, 0, "baz");
-      //[2, "baz", "Video", "Media"]
+      if (finalLPG[i][0] === 1) {
+        finalLPG[i].splice(2, 0, "", "", "", "", "");
+      } else if (finalLPG[i][0] === 2) {
+        finalLPG[i].splice(1, 0, "");
+        finalLPG[i].splice(3, 0, "", "", "", "");
+      } else if (finalLPG[i][0] === 3) {
+        finalLPG[i].splice(1, 0, "", "");
+        finalLPG[i].splice(4, 0, "", "", "");
+      } else if (finalLPG[i][0] === 4) {
+        finalLPG[i].splice(1, 0, "", "", "");
+        finalLPG[i].splice(5, 0, "", "");
+      } else if (finalLPG[i][0] === 5) {
+        finalLPG[i].splice(1, 0, "", "", "", "");
+        finalLPG[i].splice(6, 0, "");
+      } else if (finalLPG[i][0] === 6) {
+        finalLPG[i].splice(1, 0, "", "", "", "", "");
+      }
+      finalLPG[i].splice(0, 1, ""); //remove the digit
     }
+    finalLPG.unshift([
+      "ADF_CGI",
+      "level_1",
+      "level_2",
+      "level_3",
+      "level_4",
+      "level_5",
+      "level_6",
+      "node_type"
+    ]);
+    console.log(finalLPG);
+
+    finalLPG;
+
+    function convert_it(TextEntry) {
+      /* Note: In Excel spreadsheets rows are horizontal and labeled with numbers
+        Columns are vertical labeled with letters
+        Note: To put a quote in a CSV file you use two quotes as in: , "Black ""Bear"" Diner",
+      */
+      var seperator = "\t"; // Separate data by tabs or commas
+      //TextEntry = document.getElementById('TextEntry').value;
+      // If they converted once and finished text is in finished
+      // and is the same as what is in the TextEntry, then change TextEntry back to original
+      if (finished == TextEntry) TextEntry = original;
+      else original = document.getElementById("TextEntry").value;
+      /* Count how many commas or tabs are in string.  
+        If there are more commas than we will assume the data is comma separated
+      */
+      //remove the linebreaks if they are encased between a quote.  This ignores single quotes!
+      TextEntry = TextEntry.replace(/(\t"[^"\n]*)\r?\n(?=[^"]*"\t)/g, "$1 ");
+      //console.log("This is after we have removed the pagebreaks between quotes")
+      //console.log(TextEntry)
+      //and now we'll remove all of the regular stray quotes
+      //TextEntry = TextEntry.replace(/"/g,'')
+      //console.log("This is after we remove all double quotes")
+      //console.log(TextEntry)
+      /* Count how many commas or tabs are in string.  
+        If there are more commas than we will assume the data is comma separated */
+      var commas = TextEntry.split(",").length - 1;
+      var tabs = TextEntry.split("\t").length - 1;
+      console.log(commas);
+      console.log(tabs);
+      if (commas > tabs)
+        //seperator = ',';
+        //seperator = /(".*?"|[^",\s]+)(?=\s*,|\s*$)/;
+        seperator = /,\s*(?=(?:[^"]|"[^"]*")*$)/; // This is regex for matching commas not in quotes
+      //var lines = TextEntry.split(/\r?\n(?=(?:[^"]|"[^"]*")*$)/); // 9/17/2018 - Version 1.2a - Split at new lines not in quotes
+      var lines = TextEntry.split(/\r?\n/);
+      // Reset array of rows
+      rows = [];
+      // Iterate through lines and put in 2D array 'rows'
+      for (var i = 0; i < lines.length; i++) {
+        rows[i] = lines[i].split(seperator);
+        for (var a = 0; a < rows[i].length; a++) {
+          // Remove quotes around cell if first and last character are a quote
+          if (
+            (rows[i][a].charAt(0) == '"' &&
+              rows[i][a].charAt(rows[i][a].length - 1) == '"') ||
+            (rows[i][a].charAt(0) == "'" &&
+              rows[i][a].charAt(rows[i][a].length - 1) == "'")
+          ) {
+            rows[i][a] = rows[i][a].substr(1); // Remove first character
+            rows[i][a] = rows[i][a].slice(0, -1); // Remove last character
+          }
+        }
+      }
+      /* Clean up: If there is a blank line at bottom of textarea
+      it is being put in the last row with as a blank array.
+      We need to remove it
+    */
+      if (rows[rows.length - 1].length == 1 && rows[rows.length - 1][0] == "")
+        rows.pop();
+      console.log("This is the result from the CONVERT_IT function");
+      console.log(rows);
+      return rows;
+    }
+
+    let csvContent =
+      "data:text/csv;charset=utf-8," +
+      finalLPG.map(e => e.join(",")).join("\n");
+
+    var encodedUri = encodeURI(csvContent);
+    var link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "lpg.csv");
+    document.body.appendChild(link); // Required for FF
+
+    link.click();
 
     chrome.runtime.sendMessage({ message: "scrapestart" });
   } else if (request.message === "scrapedone") {
